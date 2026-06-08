@@ -376,6 +376,11 @@ body {
         <button class="btn btn-ghost btn-sm" onclick="addToVote()">🗳 加进投票</button>
       </div>
     </div>
+
+    <!-- 打赏作者 -->
+    <div style="text-align:center;margin-top:20px;">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('modalReward')" style="font-size:11px;color:var(--text-lighter);">❤️ 打赏作者</button>
+    </div>
   </div>
 
   <!-- ====== Tab 2: 菜单管理 ====== -->
@@ -534,9 +539,6 @@ body {
     <div class="setting-row">
       <div><div class="setting-label">🏙 天气城市</div></div>
       <input class="form-input" id="settingCity" placeholder="北京" style="width:120px;" onchange="updateSettingCity()">
-    </div>
-    <div class="setting-row">
-      <button class="btn btn-primary btn-sm" onclick="openModal('modalReward')" style="width:100%;">❤️ 打赏作者</button>
     </div>
     <div class="setting-row">
       <button class="btn btn-danger btn-sm" onclick="resetAll()">🗑 重置全部数据</button>
