@@ -1216,7 +1216,7 @@ function renderMenuTab() {
   }
   empty.style.display = 'none';
   grid.innerHTML = menu.items.map(i => `
-    <div class="item-card" onclick="editItem('${i.id}')">
+    <div class="item-card" data-item-id="${i.id}">
       <div class="item-name">${i.name}</div>
       <div class="item-price">¥${i.price}</div>
       <div class="item-meta">
@@ -1225,7 +1225,7 @@ function renderMenuTab() {
       </div>
       <div class="item-tags">${(i.tags||[]).slice(0,3).map(t => `<span class="tag">${t}</span>`).join('')}</div>
       ${i.lastEaten ? `<div style="font-size:11px;color:var(--text-lighter);margin-top:4px;">上次：${new Date(i.lastEaten).toLocaleDateString('zh-CN')}（第${i.eatCount||0}次）</div>` : ''}
-      <button class="btn btn-ghost btn-sm" style="position:absolute;top:4px;right:4px;padding:2px 6px;font-size:16px;" onclick="event.stopPropagation();deleteItem('${i.id}')">🗑</button>
+      <button class="btn btn-ghost btn-sm" style="position:absolute;top:4px;right:4px;padding:2px 6px;font-size:16px;" class="item-del-btn">🗑</button>
     </div>`).join('');
 }
 
@@ -1271,6 +1271,25 @@ function saveItem(e) {
   renderAll();
   showToast(editId ? '菜品已更新' : '菜品已添加');
 }
+
+
+// ==================== 事件委托：菜品卡片点击 ====================
+document.addEventListener('DOMContentLoaded', function() {
+  const grid = $('itemGrid');
+  if (grid) {
+    grid.addEventListener('click', function(e) {
+      var delBtn = e.target.closest('.item-del-btn');
+      if (delBtn) {
+        e.stopPropagation();
+        var card = delBtn.closest('.item-card');
+        if (card && card.dataset.itemId) deleteItem(card.dataset.itemId);
+        return;
+      }
+      var card = e.target.closest('.item-card');
+      if (card && card.dataset.itemId) editItem(card.dataset.itemId);
+    });
+  }
+});
 
 function renderAll() {
   renderRandomTab();
