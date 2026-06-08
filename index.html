@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>外卖选择困难症拯救器 🎲</title>
+<style>
+/* ====== CSS变量 ====== */
+:root {
+  --orange: #FF6B35;
+  --orange-light: #FFF0E8;
+  --yellow: #FFD101;
+  --yellow-light: #FFF8D6;
+  --green: #2ECC71;
+  --green-light: #E8F8EF;
+  --bg: #F5F0EB;
+  --card: #FFFFFF;
+  --text: #2C1810;
+  --text-light: #8B7E74;
+  --text-lighter: #B8A99A;
+  --border: #E8E0D8;
+  --shadow: 0 2px 12px rgba(44, 24, 16, 0.08);
+  --shadow-lg: 0 8px 32px rgba(44, 24, 16, 0.12);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ====== 全局 ====== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { height:100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 90px;
+}
+
+/* ====== 顶部栏 ====== */
+.app-header {
+  position: sticky; top:0; z-index:100;
+  background: linear-gradient(135deg, var(--orange) 0%, #E55A2B 100%);
+  color: #fff; padding: 14px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow: 0 2px 16px rgba(255,107,53,0.25);
+}
+.app-header .logo { font-size:20px; font-weight:700; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
+.app-header .logo .icon { font-size:26px; }
+.app-header .weather-badge {
+  background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+  border-radius:20px; padding:4px 12px; font-size:13px; display:flex; align-items:center; gap:4px;
+  cursor: pointer; transition: var(--transition);
+}
+.app-header .weather-badge:hover { background: rgba(255,255,255,0.3); }
+
+/* ====== 主容器 ====== */
+.app-container { max-width:720px; margin:0 auto; padding:16px; }
+
+/* ====== Tab内容区 ====== */
+.tab-content { display:none; animation: fadeSlideIn 0.35s ease; }
+.tab-content.active { display:block; }
+@keyframes fadeSlideIn {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* ====== 底部导航 ====== */
+.tab-nav {
+  position:fixed; bottom:0; left:0; right:0; z-index:100;
+  background: var(--card); border-top:1px solid var(--border);
+  display:flex; justify-content:space-around;
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.tab-nav .tab-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+  background:none; border:none; cursor:pointer; padding:6px 0;
+  color: var(--text-lighter); font-size:11px; transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-nav .tab-btn .tab-icon { font-size:22px; transition: var(--transition); }
+.tab-nav .tab-btn.active { color: var(--orange); }
+.tab-nav .tab-btn.active .tab-icon { transform: scale(1.15); }
+
+/* ====== 通用卡片 ====== */
+.card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 18px; margin-bottom: 14px;
+  box-shadow: var(--shadow); transition: var(--transition);
+}
+.card:hover { box-shadow: var(--shadow-lg); }
+
+/* ====== 筛选面板 ====== */
+.filter-bar {
+  display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;
+  align-items:center;
+}
+.filter-chip {
+  padding:7px 14px; border-radius:20px; border:1.5px solid var(--border);
+  background: var(--card); font-size:13px; cursor:pointer;
+  transition: var(--transition); white-space:nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.filter-chip:hover { border-color: var(--orange); color: var(--orange); }
+.filter-chip.active { background: var(--orange); color:#fff; border-color: var(--orange); }
+.filter-chip.budget-active { background: var(--green); color:#fff; border-color: var(--green); }
+
+/* ====== 摇号按钮 ====== */
+.roll-btn-wrap { text-align:center; margin:24px 0; }
+.roll-btn {
+  width:120px; height:120px; border-radius:50%;
+  background: linear-gradient(135deg, var(--orange) 0%, #E55A2B 100%);
+  color:#fff; border:none; font-size:48px; cursor:pointer;
+  box-shadow: 0 8px 32px rgba(255,107,53,0.35);
+  transition: all 0.15s ease; position:relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.roll-btn:hover { transform: scale(1.05); box-shadow: 0 12px 40px rgba(255,107,53,0.45); }
+.roll-btn:active { transform: scale(0.92); }
+.roll-btn.rolling { animation: shake 0.6s ease-in-out; }
+@keyframes shake {
+  0%,100% { transform: rotate(0); }
+  15% { transform: rotate(-25deg) scale(1.08); }
+  30% { transform: rotate(20deg) scale(1.05); }
+  45% { transform: rotate(-18deg) scale(1.06); }
+  60% { transform: rotate(12deg) scale(1.04); }
+  75% { transform: rotate(-6deg) scale(1.03); }
+  90% { transform: rotate(3deg); }
+}
+.roll-label { margin-top:10px; font-size:14px; color: var(--text-light); letter-spacing:1px; }
+
+/* ====== 结果卡片 ====== */
+.result-card {
+  background: linear-gradient(135deg, #FFF9F5 0%, #FFF 100%);
+  border: 2px solid var(--orange); border-radius: var(--radius);
+  padding: 24px; text-align:center; margin-bottom:16px;
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display:none;
+}
+.result-card.show { display:block; }
+@keyframes popIn {
+  from { opacity:0; transform:scale(0.85) translateY(20px); }
+  to { opacity:1; transform:scale(1) translateY(0); }
+}
+.result-card .result-name { font-size:26px; font-weight:700; color: var(--orange); margin-bottom:6px; }
+.result-card .result-meta { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin:10px 0; }
+.result-card .result-meta span {
+  padding:4px 12px; border-radius:12px; font-size:13px; font-weight:500;
+}
+.result-card .meta-price { background: var(--green-light); color:#1a7a3a; }
+.result-card .meta-rating { background: var(--yellow-light); color:#8B6914; }
+.result-card .meta-flavor { background: var(--orange-light); color: var(--orange); }
+.result-card .result-actions { margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ====== 通用按钮 ====== */
+.btn {
+  padding:10px 20px; border-radius:22px; border:none; font-size:14px; font-weight:600;
+  cursor:pointer; transition: var(--transition); letter-spacing:0.5px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary { background: var(--orange); color:#fff; box-shadow: 0 4px 12px rgba(255,107,53,0.3); }
+.btn-primary:hover { background: #E55A2B; transform: translateY(-1px); }
+.btn-outline { background: var(--card); color: var(--orange); border:1.5px solid var(--orange); }
+.btn-outline:hover { background: var(--orange-light); }
+.btn-green { background: var(--green); color:#fff; }
+.btn-green:hover { background: #27AE60; }
+.btn-sm { padding:6px 14px; font-size:12px; }
+.btn-ghost { background:transparent; color: var(--text-light); padding:6px 10px; }
+.btn-ghost:hover { color: var(--orange); }
+.btn-danger { background: #e74c3c; color:#fff; }
+.btn-danger:hover { background: #c0392b; }
+
+/* ====== 菜品列表 ====== */
+.item-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:500px) { .item-grid { grid-template-columns:1fr; } }
+
+.item-card {
+  background: var(--card); border-radius: var(--radius); padding:14px;
+  box-shadow: var(--shadow); cursor:pointer; transition: var(--transition);
+  border:2px solid transparent; position:relative;
+}
+.item-card:hover { box-shadow: var(--shadow-lg); border-color: var(--orange); }
+.item-card.selected { border-color: var(--orange); background: var(--orange-light); }
+.item-card .item-name { font-weight:600; font-size:15px; margin-bottom:4px; }
+.item-card .item-price { color: var(--orange); font-weight:700; font-size:16px; }
+.item-card .item-meta { font-size:12px; color: var(--text-light); margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.item-card .item-tags { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.tag {
+  padding:2px 8px; border-radius:10px; font-size:11px; font-weight:500;
+  background: var(--bg); color: var(--text-light);
+}
+.tag.spicy { background:#FFF0F0; color:#C0392B; }
+.tag.sweet { background:#FFF8F0; color:#E67E22; }
+.tag.soup { background:#F0F8FF; color:#2980B9; }
+
+/* 星级 */
+.stars { color: var(--yellow); font-size:13px; letter-spacing:1px; }
+
+/* ====== 弹窗 ====== */
+.modal-overlay {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.45); z-index:200;
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity:1; pointer-events:all; }
+.modal-sheet {
+  background: var(--card); border-radius:20px 20px 0 0;
+  width:100%; max-width:720px; max-height:85vh; overflow-y:auto;
+  padding:24px 20px 36px; transform:translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.modal-overlay.active .modal-sheet { transform:translateY(0); }
+
+/* ====== 表单 ====== */
+.form-group { margin-bottom:14px; }
+.form-label { display:block; font-size:13px; font-weight:600; color: var(--text-light); margin-bottom:4px; }
+.form-input, .form-textarea, .form-select {
+  width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-size:15px; background: #FAFAFA; transition: var(--transition); outline:none;
+  font-family:inherit;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--orange); background:#FFF; box-shadow:0 0 0 3px rgba(255,107,53,0.1);
+}
+.form-textarea { min-height:70px; resize:vertical; }
+.form-row { display:flex; gap:10px; }
+.form-row > * { flex:1; }
+
+/* ====== 投票 ====== */
+.vote-option {
+  padding:14px 18px; border-radius: var(--radius); margin-bottom:10px;
+  background: var(--card); border:2px solid var(--border); cursor:pointer;
+  transition: var(--transition); display:flex; justify-content:space-between; align-items:center;
+}
+.vote-option:hover { border-color: var(--orange); background: var(--orange-light); }
+.vote-option.voted { border-color: var(--green); background: var(--green-light); }
+.vote-bar-wrap { background: var(--bg); border-radius:6px; height:10px; margin-top:8px; overflow:hidden; }
+.vote-bar { height:100%; background: linear-gradient(90deg, var(--orange), var(--yellow)); border-radius:6px; transition: width 0.5s ease; }
+
+/* ====== 统计 ====== */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.stat-card { background: var(--card); border-radius: var(--radius); padding:16px; text-align:center; box-shadow: var(--shadow); }
+.stat-card .stat-num { font-size:32px; font-weight:700; color: var(--orange); }
+.stat-card .stat-label { font-size:12px; color: var(--text-light); margin-top:2px; }
+
+.chart-bar-wrap { display:flex; align-items:flex-end; gap:8px; height:160px; padding:8px 0; }
+.chart-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.chart-bar { width:100%; max-width:50px; background: linear-gradient(180deg, var(--orange), var(--yellow)); border-radius:6px 6px 0 0; transition: height 0.6s ease; min-height:4px; }
+.chart-bar-label { font-size:11px; color: var(--text-light); text-align:center; }
+.chart-bar-val { font-size:12px; font-weight:600; color: var(--orange); }
+
+/* ====== 历史列表 ====== */
+.history-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 16px; background: var(--card); border-radius: var(--radius-sm);
+  margin-bottom:8px; box-shadow: var(--shadow);
+}
+.history-item .hi-left { display:flex; flex-direction:column; gap:2px; }
+.history-item .hi-name { font-weight:600; font-size:14px; }
+.history-item .hi-date { font-size:12px; color: var(--text-lighter); }
+.history-item .hi-right { text-align:right; }
+.history-item .hi-price { font-weight:700; color: var(--orange); font-size:16px; }
+.history-item .hi-rating { font-size:12px; color: var(--yellow); }
+
+/* ====== 设置项 ====== */
+.setting-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.setting-row .setting-label { font-size:14px; }
+.setting-row .setting-desc { font-size:12px; color: var(--text-light); }
+
+/* 开关 */
+.toggle { width:48px; height:28px; border-radius:14px; background:#ccc; cursor:pointer; position:relative; transition: var(--transition); }
+.toggle.on { background: var(--green); }
+.toggle::after { content:''; position:absolute; width:22px; height:22px; border-radius:50%; background:#fff; top:3px; left:3px; transition: var(--transition); box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+.toggle.on::after { left:23px; }
+
+/* ====== 提示 ====== */
+.empty-state { text-align:center; padding:48px 20px; color: var(--text-lighter); }
+.empty-state .empty-icon { font-size:56px; margin-bottom:12px; }
+.toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-120px);
+  background: var(--text); color:#fff; padding:10px 24px; border-radius:22px;
+  font-size:14px; z-index:300; pointer-events:none;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ====== 菜单选择器 ====== */
+.menu-selector { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.menu-selector .menu-tab {
+  padding:6px 16px; border-radius:20px; border:1.5px solid var(--border);
+  background: var(--card); cursor:pointer; font-size:13px; transition: var(--transition);
+  white-space:nowrap;
+}
+.menu-selector .menu-tab.active { background: var(--orange); color:#fff; border-color: var(--orange); }
+.menu-selector .menu-tab-add { background:transparent; border-style:dashed; color: var(--text-lighter); }
+
+/* ====== 响应式补充 ====== */
+@media (min-width:720px) {
+  .modal-sheet { border-radius:20px; margin:auto; max-height:80vh; }
+  .modal-overlay { align-items:center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== 顶部栏 ====== -->
+<header class="app-header">
+  <div class="logo"><span class="icon">🎲</span>外卖救星</div>
+  <div class="weather-badge" id="weatherBadge" title="点击刷新天气">⏳ 加载中...</div>
+</header>
+
+<!-- ====== 主容器 ====== -->
+<div class="app-container">
+
+  <!-- ====== Tab 1: 随机推荐 ====== -->
+  <div class="tab-content active" id="tab-random">
+    <div class="menu-selector" id="randomMenuSelector"></div>
+
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:8px;">🔍 筛选条件</div>
+      <div class="filter-bar" id="flavorFilter">
+        <span class="filter-chip active" data-flavor="all">全部</span>
+        <span class="filter-chip" data-flavor="spicy">🌶 辣</span>
+        <span class="filter-chip" data-flavor="non-spicy">🥢 不辣</span>
+        <span class="filter-chip" data-flavor="sweet">🍯 甜</span>
+        <span class="filter-chip" data-flavor="salty">🧂 咸</span>
+        <span class="filter-chip" data-flavor="sour">🍋 酸</span>
+        <span class="filter-chip" data-flavor="light">🍃 清淡</span>
+      </div>
+      <div class="filter-bar" style="margin-top:6px;">
+        <span class="filter-chip" id="budgetChip" onclick="toggleBudget()">💰 预算</span>
+        <span class="filter-chip" id="excludeChip" onclick="toggleExclude()">🚫 排除近期</span>
+      </div>
+      <div id="budgetInput" style="display:none;margin-top:8px;">
+        <input type="number" class="form-input" id="budgetValue" placeholder="最高预算（元）" style="width:150px;" onchange="updateBudget()">
+      </div>
+    </div>
+
+    <div class="roll-btn-wrap">
+      <button class="roll-btn" id="rollBtn" onclick="rollTheDice()">🎯</button>
+      <div class="roll-label">点我摇号，告别纠结！</div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="result-name" id="resultName"></div>
+      <div class="result-meta">
+        <span class="meta-price" id="resultPrice"></span>
+        <span class="meta-rating" id="resultRating"></span>
+        <span class="meta-flavor" id="resultFlavor"></span>
+      </div>
+      <div style="font-size:13px;color:var(--text-light);margin:6px 0;" id="resultNotes"></div>
+      <div style="font-size:12px;color:var(--text-lighter);" id="resultAddress"></div>
+      <div style="margin-top:4px;" id="resultTags"></div>
+      <div style="font-size:12px;color:var(--green);margin-top:6px;" id="resultReason"></div>
+      <div class="result-actions">
+        <button class="btn btn-outline btn-sm" onclick="rollTheDice()">🔄 再来一次</button>
+        <button class="btn btn-primary btn-sm" id="btnConfirmOrder" onclick="confirmOrder()">✅ 就这个了！</button>
+        <button class="btn btn-ghost btn-sm" onclick="addToVote()">🗳 加进投票</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab 2: 菜单管理 ====== -->
+  <div class="tab-content" id="tab-menu">
+    <div class="menu-selector" id="menuTabSelector"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="openItemForm()">➕ 添加菜品</button>
+      <button class="btn btn-outline btn-sm" onclick="importData()">📥 导入</button>
+      <button class="btn btn-outline btn-sm" onclick="exportData()">📤 导出</button>
+      <button class="btn btn-ghost btn-sm" onclick="openSettings()">⚙️ 设置</button>
+    </div>
+    <div class="item-grid" id="itemGrid"></div>
+    <div class="empty-state" id="menuEmpty">
+      <div class="empty-icon">📋</div>
+      <div>还没有菜品，点击上方按钮添加吧！</div>
+    </div>
+  </div>
+
+  <!-- ====== Tab 3: 投票 ====== -->
+  <div class="tab-content" id="tab-vote">
+    <div id="voteNormal">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="startCreateVote()">📝 创建投票</button>
+        <button class="btn btn-outline btn-sm" id="btnPasteResults" onclick="showPasteResults()">📋 汇总结果码</button>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:12px;">📊 当前投票</div>
+        <div id="voteActiveInfo">
+          <div class="empty-state"><div class="empty-icon">🗳️</div><div>暂无活跃投票<br>点击「创建投票」开始</div></div>
+        </div>
+        <div id="voteResults" style="display:none;"></div>
+      </div>
+    </div>
+    <div id="voteVoter" style="display:none;">
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:12px;">🗳️ 参与投票</div>
+        <div id="voteVoterTitle"></div>
+        <div id="voteVoterOptions"></div>
+        <div id="voteVoterDone" style="display:none;text-align:center;padding:20px;">
+          <div style="font-size:40px;">✅</div>
+          <div style="font-weight:600;margin:8px 0;">投票成功！</div>
+          <div style="font-size:13px;color:var(--text-light);margin-bottom:12px;">请复制下面的结果码发给发起者</div>
+          <div style="background:var(--bg);padding:10px;border-radius:8px;font-family:monospace;word-break:break-all;margin-bottom:12px;" id="voteVoterCode"></div>
+          <button class="btn btn-primary btn-sm" onclick="copyVoterCode()">📋 复制结果码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab 4: 统计 ====== -->
+  <div class="tab-content" id="tab-stats">
+    <div class="stat-grid" id="statOverview"></div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;">📊 本月品类消费分布</div>
+      <div class="chart-bar-wrap" id="chartBars"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;">📝 最近订单</div>
+      <div id="historyList"></div>
+      <div class="empty-state" id="historyEmpty">
+        <div class="empty-icon">📭</div><div>暂无订单记录</div>
+      </div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="exportHistoryCSV()" style="margin-top:8px;">📥 导出历史CSV</button>
+  </div>
+</div>
+
+<!-- ====== 底部导航 ====== -->
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="random"><span class="tab-icon">🎲</span>推荐</button>
+  <button class="tab-btn" data-tab="menu"><span class="tab-icon">📋</span>菜单</button>
+  <button class="tab-btn" data-tab="vote"><span class="tab-icon">🗳️</span>投票</button>
+  <button class="tab-btn" data-tab="stats"><span class="tab-icon">📊</span>统计</button>
+</nav>
+
+<!-- ====== Toast ====== -->
+<div class="toast" id="toast"></div>
+
+<!-- ====== 弹窗：添加/编辑菜品 ====== -->
+<div class="modal-overlay" id="modalItem">
+  <div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="modalItemTitle">添加菜品</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modalItem')">✕</button>
+    </div>
+    <form id="itemForm" onsubmit="saveItem(event)">
+      <input type="hidden" id="itemEditId">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">名称 *</label><input class="form-input" id="itemName" required placeholder="如：杨国福麻辣烫"></div>
+        <div class="form-group"><label class="form-label">价格（元）*</label><input class="form-input" type="number" id="itemPrice" required placeholder="28" step="0.1" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">评分</label><select class="form-select" id="itemRating"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3" selected>⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select></div>
+        <div class="form-group"><label class="form-label">口味</label><select class="form-select" id="itemFlavor"><option value="spicy">🌶 辣</option><option value="non-spicy">🥢 不辣</option><option value="sweet">🍯 甜</option><option value="salty" selected>🧂 咸</option><option value="sour">🍋 酸</option><option value="light">🍃 清淡</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">地址</label><input class="form-input" id="itemAddress" placeholder="如：科荟路B1层美食广场"></div>
+      <div class="form-group"><label class="form-label">标签（逗号分隔）</label><input class="form-input" id="itemTags" placeholder="如：麻辣烫, 辣, 午餐, 暖身"></div>
+      <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="itemNotes" placeholder="个人备忘..." rows="2"></textarea></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">💾 保存</button>
+    </form>
+  </div>
+</div>
+
+<!-- ====== 弹窗：创建投票 ====== -->
+<div class="modal-overlay" id="modalVote">
+  <div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3>创建投票</h3><button class="btn btn-ghost btn-sm" onclick="closeModal('modalVote')">✕</button>
+    </div>
+    <div style="margin-bottom:12px;font-size:13px;color:var(--text-light);">选择 2-5 个菜品让同事投票（点击选中）</div>
+    <div class="item-grid" id="voteItemGrid"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="generateVote()">🔗 生成投票链接</button>
+    <div id="voteLinkArea" style="display:none;margin-top:12px;">
+      <div style="font-size:13px;color:var(--text-light);margin-bottom:6px;">👇 复制链接发给同事</div>
+      <div style="background:var(--bg);padding:10px;border-radius:8px;font-family:monospace;font-size:12px;word-break:break-all;" id="voteLinkText"></div>
+      <button class="btn btn-outline btn-sm" onclick="copyVoteLink()" style="margin-top:8px;">📋 复制链接</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 弹窗：汇总投票结果 ====== -->
+<div class="modal-overlay" id="modalMerge">
+  <div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3>汇总投票结果</h3><button class="btn btn-ghost btn-sm" onclick="closeModal('modalMerge')">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-light);margin-bottom:8px;">将同事发来的「结果码」逐行粘贴到下面（每行一个码）</div>
+    <textarea class="form-textarea" id="mergeCodes" rows="4" placeholder="粘贴结果码..."></textarea>
+    <button class="btn btn-primary btn-sm" onclick="mergeVotes()" style="margin-top:8px;">📊 汇总统计</button>
+  </div>
+</div>
+
+<!-- ====== 弹窗：设置 ====== -->
+<div class="modal-overlay" id="modalSettings">
+  <div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3>⚙️ 设置</h3><button class="btn btn-ghost btn-sm" onclick="closeModal('modalSettings')">✕</button>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">🌤 天气推荐</div><div class="setting-desc">根据天气加权推荐</div></div>
+      <div class="toggle on" id="toggleWeather" onclick="toggleSetting('weatherEnabled')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">⏰ 午间提醒</div><div class="setting-desc">工作日11:30提醒点餐</div></div>
+      <div class="toggle" id="toggleReminder" onclick="toggleSetting('reminderEnabled')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">🚫 排除近期</div><div class="setting-desc">排除最近吃过天数</div></div>
+      <select class="form-select" style="width:80px;" id="settingDays" onchange="updateSettingDays()">
+        <option value="1">1天</option><option value="3">3天</option><option value="5">5天</option><option value="7" selected>7天</option><option value="14">14天</option><option value="0">不排除</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">🏙 天气城市</div></div>
+      <input class="form-input" id="settingCity" placeholder="北京" style="width:120px;" onchange="updateSettingCity()">
+    </div>
+    <div class="setting-row">
+      <button class="btn btn-danger btn-sm" onclick="resetAll()">🗑 重置全部数据</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   外卖选择困难症拯救器 — JavaScript 完整实现
+   ================================================================ */
+
+// ==================== 工具函数 ====================
+function $(id) { return document.getElementById(id); }
+function $$(sel) { return document.querySelectorAll(sel); }
+function now() { return Date.now(); }
+function dayMs() { return 86400000; }
+function uid() { return 'id_' + now() + '_' + Math.random().toString(36).slice(2,7); }
+
+// ==================== Toast ====================
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ==================== 弹窗 ====================
+function openModal(id) { $(id).classList.add('active'); }
+function closeModal(id) { $(id).classList.remove('active'); }
+
+// ==================== Storage ====================
+const STORAGE = {
+  get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch(e) { return fallback; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+// ==================== 默认数据 ====================
+function defaultMenus() {
+  return [{
+    id: 'm_default', name: '公司周边',
+    items: [
+      { id:uid(), name:'杨国福麻辣烫', price:28, rating:4, address:'科荟路B1层', notes:'微辣多加麻酱', tags:['麻辣烫','辣','午餐','暖身'], flavor:'spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'老乡鸡', price:22, rating:4, address:'科技园A座1层', notes:'农家小炒肉套餐好吃', tags:['快餐','不辣','午餐','米饭'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'兰州拉面', price:18, rating:3, address:'创业路12号', notes:'汤好喝，面有嚼劲', tags:['面食','不辣','午餐','暖身'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'张亮麻辣烫', price:25, rating:4, address:'科荟路美食城2层', notes:'比杨国福便宜一点', tags:['麻辣烫','辣','午餐','暖身'], flavor:'spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'和合谷', price:30, rating:3, address:'科技园B座B1', notes:'宫保鸡丁饭经典', tags:['快餐','不辣','午餐','米饭'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'韩国炸鸡', price:38, rating:4, address:'美食街8号', notes:'甜辣酱超赞', tags:['炸鸡','辣','午餐','小吃'], flavor:'spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'沙县小吃', price:15, rating:3, address:'创业路5号', notes:'便宜实惠管饱', tags:['快餐','不辣','午餐','米饭'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'日式拉面', price:35, rating:4, address:'科荟路商场3层', notes:'豚骨拉面汤底浓', tags:['面食','不辣','午餐','暖身'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+    ]
+  }, {
+    id: 'm_home', name: '家周边',
+    items: [
+      { id:uid(), name:'黄焖鸡米饭', price:20, rating:4, address:'小区门口', notes:'分量大味道好', tags:['快餐','不辣','晚餐','米饭'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'螺蛳粉', price:16, rating:4, address:'小区南门', notes:'加酸笋加豆泡', tags:['粉面','辣','晚餐','小吃'], flavor:'spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'炸鸡汉堡', price:25, rating:3, address:'商业街1号', notes:'偶尔放纵一下', tags:['快餐','不辣','晚餐','小吃'], flavor:'non-spicy', lastEaten:null, eatCount:0, createdAt:now() },
+      { id:uid(), name:'酸菜鱼', price:42, rating:5, address:'商业街美食城', notes:'两人份刚好', tags:['鱼','酸','晚餐','大餐'], flavor:'sour', lastEaten:null, eatCount:0, createdAt:now() },
+    ]
+  }];
+}
+
+function defaultSettings() {
+  return { budget: null, excludeRecentDays: 7, reminderTime: '11:30', reminderEnabled: false, weatherEnabled: true, weatherCity: '北京' };
+}
+
+// ==================== 数据访问 ====================
+function getMenus() { return STORAGE.get('foodie_menus', defaultMenus()); }
+function saveMenus(m) { STORAGE.set('foodie_menus', m); }
+function getCurrentMenuId() { return STORAGE.get('foodie_current_menu', 'm_default'); }
+function saveCurrentMenuId(id) { STORAGE.set('foodie_current_menu', id); }
+function getCurrentMenu() {
+  const menus = getMenus(); const id = getCurrentMenuId();
+  return menus.find(m => m.id === id) || menus[0];
+}
+function getSettings() { return STORAGE.get('foodie_settings', defaultSettings()); }
+function saveSettings(s) { STORAGE.set('foodie_settings', s); }
+function getHistory() { return STORAGE.get('foodie_history', []); }
+function saveHistory(h) { STORAGE.set('foodie_history', h); }
+
+// ==================== 菜单管理 ====================
+function addMenu(name) {
+  const menus = getMenus(); const m = { id:uid(), name, items:[], createdAt:now() };
+  menus.push(m); saveMenus(menus); saveCurrentMenuId(m.id); renderAll(); showToast('菜单「' + name + '」已创建');
+}
+function deleteMenu(id) {
+  const menus = getMenus(); if (menus.length <= 1) { showToast('至少保留一个菜单'); return; }
+  const idx = menus.findIndex(m => m.id === id);
+  if (idx > -1) { menus.splice(idx,1); saveMenus(menus); saveCurrentMenuId(menus[0].id); renderAll(); showToast('菜单已删除'); }
+}
+function addItem(item) {
+  const menus = getMenus(); const menu = menus.find(m => m.id === getCurrentMenuId());
+  if (!menu) return;
+  if (!item.id) { item.id = uid(); item.createdAt = now(); item.lastEaten = null; item.eatCount = 0; }
+  else { const idx = menu.items.findIndex(i => i.id === item.id); if (idx > -1) { menu.items[idx] = item; saveMenus(menus); return; } }
+  menu.items.push(item); saveMenus(menus);
+}
+function deleteItem(itemId) {
+  const menus = getMenus(); const menu = menus.find(m => m.id === getCurrentMenuId());
+  if (!menu) return;
+  menu.items = menu.items.filter(i => i.id !== itemId);
+  saveMenus(menus); renderAll(); showToast('菜品已删除');
+}
+
+// ==================== 随机引擎 ====================
+function getFilteredItems(menu) {
+  const settings = getSettings();
+  let items = [...menu.items]; if (!items.length) return [];
+
+  // 排除近期吃过的
+  if (settings.excludeRecentDays > 0) {
+    const cutoff = now() - settings.excludeRecentDays * dayMs();
+    const filtered = items.filter(i => !i.lastEaten || i.lastEaten < cutoff);
+    if (filtered.length > 0) items = filtered;
+  }
+  // 预算过滤
+  if (settings.budget) {
+    const filtered = items.filter(i => i.price <= settings.budget);
+    if (filtered.length > 0) items = filtered;
+  }
+  return items;
+}
+
+function calcWeights(items) {
+  const settings = getSettings();
+  const totalDays = Math.max(1, (now() - Math.min(...items.map(i => i.createdAt || now()))) / dayMs());
+  const totalEat = Math.max(1, items.reduce((s,i) => s + (i.eatCount || 0), 0));
+
+  return items.map(item => {
+    let w = 100;
+    const daysSince = item.lastEaten ? (now() - item.lastEaten) / dayMs() : totalDays;
+    const dayBonus = Math.min(80, (daysSince / Math.max(1, totalDays)) * 80);
+    w += dayBonus;
+    const ratingBonus = ((item.rating || 3) / 5) * 50;
+    w += ratingBonus;
+    const freqPenalty = ((item.eatCount || 0) / totalEat) * 40;
+    w -= freqPenalty;
+
+    // 天气加权
+    if (settings.weatherEnabled && window._weatherBoost) {
+      const boost = window._weatherBoost;
+      const nameAndTags = (item.name + ' ' + (item.tags || []).join(' ')).toLowerCase();
+      for (const [kw, mult] of Object.entries(boost)) {
+        if (nameAndTags.includes(kw.toLowerCase())) { w *= mult; break; }
+      }
+    }
+    return { item, weight: Math.max(1, w) };
+  });
+}
+
+function weightedRandom(weightedItems) {
+  const total = weightedItems.reduce((s, wi) => s + wi.weight, 0);
+  let rand = Math.random() * total;
+  for (const wi of weightedItems) {
+    rand -= wi.weight;
+    if (rand <= 0) return wi.item;
+  }
+  return weightedItems[weightedItems.length - 1].item;
+}
+
+// ==================== 天气 ====================
+async function fetchWeather() {
+  const settings = getSettings();
+  const city = settings.weatherCity || '北京';
+  try {
+    const resp = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    const cur = data.current_condition[0];
+    const temp = parseInt(cur.temp_C);
+    const code = parseInt(cur.weatherCode);
+    const desc = cur.weatherDesc[0].value;
+    const icon = cur.weatherDesc[0].value.includes('雨') ? '🌧' :
+                 cur.weatherDesc[0].value.includes('雪') ? '🌨' :
+                 cur.weatherDesc[0].value.includes('晴') ? '☀️' :
+                 cur.weatherDesc[0].value.includes('云') ? '⛅' : '🌤';
+
+    $('weatherBadge').innerHTML = `${icon} ${city} ${temp}°C ${desc}`;
+
+    // 计算天气加权
+    window._weatherBoost = {};
+    const descLower = desc.toLowerCase();
+    if (descLower.includes('rain') || descLower.includes('drizzle') || descLower.includes('shower') || desc.includes('雨')) {
+      window._weatherBoost = { '汤':2, '面':1.5, '火锅':2.5, '热':1.5, '暖':1.5, '麻辣烫':2, '拉面':1.5, '米线':1.5 };
+      window._weatherNote = '🌧 下雨天，推荐热汤暖食！';
+    }
+    if (descLower.includes('snow') || desc.includes('雪')) {
+      window._weatherBoost = { '汤':2.5, '火锅':3, '热':2, '暖':2, '面':2 };
+      window._weatherNote = '🌨 下雪天，来碗热乎的！';
+    }
+    if (temp > 32) {
+      window._weatherBoost = { '凉':2, '冷':2, '沙拉':2.5, '冰':2, '轻食':1.5 };
+      window._weatherNote = '☀️ 高温天气，推荐清爽轻食！';
+    }
+    if (temp < 8) {
+      window._weatherBoost = { '汤':2, '火锅':3, '热':1.8, '暖':1.8, '面':1.5 };
+      window._weatherNote = '🥶 天气寒冷，吃点热乎的暖身！';
+    }
+    if (Object.keys(window._weatherBoost).length === 0) window._weatherNote = '';
+  } catch(e) {
+    $('weatherBadge').innerHTML = '🌤 天气信息暂不可用';
+    window._weatherBoost = {}; window._weatherNote = '';
+  }
+}
+
+// ==================== 摇号 ====================
+let _lastRollItem = null;
+
+function rollTheDice() {
+  const btn = $('rollBtn');
+  btn.classList.add('rolling');
+  setTimeout(() => btn.classList.remove('rolling'), 600);
+
+  const menu = getCurrentMenu();
+  let items = getFilteredItems(menu);
+  if (!items.length) {
+    const allItems = menu.items;
+    if (!allItems.length) { showToast('当前菜单没有菜品，请先添加！'); return; }
+    items = allItems; showToast('筛选条件已放宽');
+  }
+
+  const activeFlavor = document.querySelector('#flavorFilter .filter-chip.active');
+  const flavor = activeFlavor ? activeFlavor.dataset.flavor : 'all';
+  if (flavor !== 'all') {
+    const flavorItems = items.filter(i => i.flavor === flavor);
+    if (flavorItems.length > 0) items = flavorItems;
+  }
+
+  const weighted = calcWeights(items);
+  const chosen = weightedRandom(weighted);
+  _lastRollItem = chosen;
+  showResult(chosen);
+}
+
+function showResult(item) {
+  const card = $('resultCard');
+  $('resultName').textContent = item.name;
+  $('resultPrice').textContent = '¥' + item.price;
+  $('resultRating').textContent = '⭐'.repeat(item.rating || 3);
+  const flavorMap = { spicy:'🌶 辣', 'non-spicy':'🥢 不辣', sweet:'🍯 甜', salty:'🧂 咸', sour:'🍋 酸', light:'🍃 清淡' };
+  $('resultFlavor').textContent = flavorMap[item.flavor] || item.flavor;
+  $('resultNotes').textContent = item.notes || '';
+  $('resultAddress').textContent = item.address ? '📍 ' + item.address : '';
+  $('resultTags').innerHTML = (item.tags || []).map(t => `<span class="tag">${t}</span>`).join(' ');
+
+  // 天气推荐理由
+  $('resultReason').textContent = window._weatherNote || '';
+
+  card.classList.remove('show');
+  void card.offsetWidth;
+  card.classList.add('show');
+  card.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function confirmOrder() {
+  if (!_lastRollItem) { showToast('请先摇号！'); return; }
+  const item = _lastRollItem;
+  const history = getHistory();
+  const order = { id:uid(), itemId:item.id, itemName:item.name, menuName:getCurrentMenu().name,
+    price:item.price, rating:item.rating, date:now(), notes:'' };
+  history.unshift(order);
+  saveHistory(history);
+
+  // 更新菜品统计数据
+  const menus = getMenus(); const menu = menus.find(m => m.id === getCurrentMenuId());
+  if (menu) { const it = menu.items.find(i => i.id === item.id); if (it) { it.lastEaten = now(); it.eatCount = (it.eatCount||0)+1; } }
+  saveMenus(menus);
+  showToast('✅ 已记录：' + item.name + ' ¥' + item.price);
+}
+
+function addToVote() {
+  if (!_lastRollItem) { showToast('请先摇号！'); return; }
+  if (!window._voteSelected) window._voteSelected = new Set();
+  window._voteSelected.add(_lastRollItem.id);
+  showToast('已加入投票候选（' + window._voteSelected.size + '个）');
+}
+
+// ==================== 筛选 ====================
+function toggleBudget() {
+  const div = $('budgetInput'); const chip = $('budgetChip');
+  div.style.display = div.style.display === 'none' ? 'block' : 'none';
+  if (div.style.display === 'block') { $('budgetValue').focus(); }
+  else { const s = getSettings(); s.budget = null; saveSettings(s); chip.classList.remove('budget-active'); $('budgetValue').value = ''; }
+}
+function updateBudget() {
+  const v = parseFloat($('budgetValue').value); const s = getSettings(); const chip = $('budgetChip');
+  if (v && v > 0) { s.budget = v; chip.classList.add('budget-active'); chip.textContent = '💰 ≤¥' + v; }
+  else { s.budget = null; chip.classList.remove('budget-active'); chip.textContent = '💰 预算'; }
+  saveSettings(s);
+}
+function toggleExclude() {
+  const s = getSettings(); const chip = $('excludeChip');
+  if (s.excludeRecentDays > 0) { s.excludeRecentDays = 0; chip.classList.remove('active'); chip.textContent = '🚫 排除近期'; }
+  else { s.excludeRecentDays = 7; chip.classList.add('active'); chip.textContent = '🚫 排除7天'; }
+  saveSettings(s);
+}
+
+// ==================== 投票 ====================
+let _voteData = null; let _voteSelectedItems = new Set();
+
+function startCreateVote() {
+  _voteSelectedItems = new Set();
+  const menu = getCurrentMenu();
+  const grid = $('voteItemGrid');
+  grid.innerHTML = menu.items.map(i => `
+    <div class="item-card" data-vid="${i.id}" onclick="toggleVoteItem(this, '${i.id}')">
+      <div class="item-name">${i.name}</div>
+      <div class="item-price">¥${i.price}</div>
+      <div class="item-meta">${'⭐'.repeat(i.rating||3)} ${i.flavor||''}</div>
+    </div>`).join('');
+  openModal('modalVote'); $('voteLinkArea').style.display = 'none';
+}
+
+function toggleVoteItem(el, id) {
+  if (_voteSelectedItems.has(id)) { _voteSelectedItems.delete(id); el.classList.remove('selected'); }
+  else { if (_voteSelectedItems.size >= 5) { showToast('最多选5个'); return; } _voteSelectedItems.add(id); el.classList.add('selected'); }
+}
+
+function generateVote() {
+  if (_voteSelectedItems.size < 2) { showToast('至少选2个菜品'); return; }
+  const menu = getCurrentMenu();
+  const options = [];
+  _voteSelectedItems.forEach(id => {
+    const item = menu.items.find(i => i.id === id);
+    if (item) options.push({ id:item.id, name:item.name });
+  });
+  _voteData = { voteId: uid(), options, title: menu.name + ' 外卖投票', creator: '发起者', createdAt: now() };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(_voteData))));
+  const link = location.origin + location.pathname + '#vote=' + encoded;
+  $('voteLinkText').textContent = link;
+  $('voteLinkArea').style.display = 'block';
+  $('voteLinkText').scrollIntoView({ behavior:'smooth' });
+}
+
+function copyVoteLink() {
+  const text = $('voteLinkText').textContent;
+  if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => showToast('链接已复制！发给同事吧')); }
+  else { showToast('请手动复制链接'); }
+}
+
+function showPasteResults() { openModal('modalMerge'); }
+
+function mergeVotes() {
+  const codes = $('mergeCodes').value.trim().split(/[\n\r]+/).filter(Boolean);
+  if (!codes.length) { showToast('请粘贴结果码'); return; }
+  const tally = {};
+  codes.forEach(code => {
+    try {
+      const data = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+      if (data.chosenId) { tally[data.chosenId] = (tally[data.chosenId] || 0) + 1; }
+    } catch(e) { /* skip invalid */ }
+  });
+  const entries = Object.entries(tally).sort((a,b) => b[1] - a[1]);
+  if (!entries.length) { showToast('没有有效的投票数据'); return; }
+  const total = entries.reduce((s,e) => s + e[1], 0);
+
+  // 找到菜品名
+  const menu = getCurrentMenu();
+  let html = '<div style="font-weight:600;margin:12px 0 8px;">📊 投票结果（共' + total + '票）</div>';
+  entries.forEach(([id, count]) => {
+    const item = menu.items.find(i => i.id === id);
+    const name = item ? item.name : id;
+    const pct = Math.round(count / total * 100);
+    html += `<div class="vote-option"><span>${name}</span><span style="font-weight:700;color:var(--orange);">${count}票 (${pct}%)</span></div>
+      <div class="vote-bar-wrap"><div class="vote-bar" style="width:${pct}%;"></div></div>`;
+  });
+  html += `<div style="text-align:center;margin-top:12px;font-weight:700;font-size:18px;color:var(--orange);">🏆 胜出：${entries[0][0] === menu.items.find(i=>i.id===entries[0][0])?.id ? (menu.items.find(i=>i.id===entries[0][0])?.name || entries[0][0]) : entries[0][0]}</div>`;
+  $('voteResults').innerHTML = html;
+  $('voteResults').style.display = 'block';
+  $('voteActiveInfo').style.display = 'none';
+  closeModal('modalMerge');
+  showToast('汇总完成！共' + codes.length + '人投票');
+}
+
+// ==================== 投票者视图 ====================
+function checkVoteFromURL() {
+  const hash = location.hash;
+  if (!hash.startsWith('#vote=')) return false;
+  try {
+    const encoded = hash.slice(6);
+    const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    if (data.options && data.options.length) {
+      _voteData = data;
+      $('voteNormal').style.display = 'none';
+      $('voteVoter').style.display = 'block';
+      $('voteVoterTitle').innerHTML = `<h3 style="margin-bottom:12px;">${data.title || '外卖投票'}</h3>
+        <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">来自 ${data.creator || '同事'} 的投票邀请，请选择你想吃的：</p>`;
+      $('voteVoterOptions').innerHTML = data.options.map(o => `
+        <div class="vote-option" onclick="castVoterVote('${o.id}')">
+          <span style="font-weight:600;">${o.name}</span><span style="color:var(--text-light);">点击投票 👆</span>
+        </div>`).join('');
+      $('voteVoterDone').style.display = 'none';
+      // 切换到投票Tab
+      document.querySelector('.tab-btn[data-tab="vote"]').click();
+      return true;
+    }
+  } catch(e) { console.error('Vote parse error:', e); }
+  return false;
+}
+
+function castVoterVote(chosenId) {
+  const chosen = _voteData.options.find(o => o.id === chosenId);
+  if (!chosen) return;
+  const result = { voteId: _voteData.voteId, chosenId, voter: '同事_' + Math.random().toString(36).slice(2,6), time: now() };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(result))));
+  $('voteVoterOptions').style.display = 'none';
+  $('voteVoterDone').style.display = 'block';
+  $('voteVoterCode').textContent = encoded;
+  $('voteVoterTitle').innerHTML += `<div style="color:var(--green);font-weight:600;margin-top:6px;">你投给了：${chosen.name} ✅</div>`;
+}
+
+function copyVoterCode() {
+  const text = $('voteVoterCode').textContent;
+  if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => showToast('结果码已复制！发给发起者即可')); }
+  else { showToast('请手动复制结果码'); }
+}
+
+// ==================== 历史 & 统计 ====================
+function renderStats() {
+  const history = getHistory();
+  const nowDate = new Date();
+  const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).getTime();
+  const monthHistory = history.filter(h => h.date >= monthStart);
+  const totalSpent = monthHistory.reduce((s,h) => s + (h.price||0), 0);
+  const avgPrice = monthHistory.length ? Math.round(totalSpent / monthHistory.length) : 0;
+
+  $('statOverview').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${monthHistory.length}</div><div class="stat-label">本月订单数</div></div>
+    <div class="stat-card"><div class="stat-num">¥${totalSpent}</div><div class="stat-label">本月总花费</div></div>
+    <div class="stat-card"><div class="stat-num">¥${avgPrice}</div><div class="stat-label">本月均单价</div></div>
+    <div class="stat-card"><div class="stat-num">${history.length}</div><div class="stat-label">历史总订单</div></div>`;
+
+  // 品类统计
+  const catMap = {};
+  monthHistory.forEach(h => {
+    const menus = getMenus();
+    for (const m of menus) { const item = m.items.find(i => i.id === h.itemId); if (item) { const cat = (item.tags||[])[0] || '其他'; catMap[cat] = (catMap[cat]||0) + h.price; break; } }
+  });
+  const entries = Object.entries(catMap).sort((a,b) => b[1] - a[1]).slice(0,6);
+  const maxVal = Math.max(1, ...entries.map(e => e[1]));
+  $('chartBars').innerHTML = entries.length ? entries.map(([cat, val]) => `
+    <div class="chart-bar-col"><div class="chart-bar-val">¥${val}</div><div class="chart-bar" style="height:${Math.round(val/maxVal*140)}px;"></div><div class="chart-bar-label">${cat}</div></div>`).join('') :
+    '<div class="empty-state" style="padding:20px;"><div>暂无本月数据</div></div>';
+
+  // 历史列表
+  const recent = history.slice(0, 20);
+  $('historyList').innerHTML = recent.length ? recent.map(h => `
+    <div class="history-item">
+      <div class="hi-left"><span class="hi-name">${h.itemName}</span>
+        <span class="hi-date">${new Date(h.date).toLocaleDateString('zh-CN')} · ${h.menuName || ''}</span></div>
+      <div class="hi-right"><span class="hi-price">¥${h.price}</span><br><span class="hi-rating">${'⭐'.repeat(h.rating||3)}</span></div>
+    </div>`).join('') : '';
+  $('historyEmpty').style.display = recent.length ? 'none' : 'block';
+}
+
+// ==================== 导入/导出 ====================
+function exportData() {
+  const data = { menus: getMenus(), history: getHistory(), settings: getSettings(), currentMenu: getCurrentMenuId(), exportTime: now() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '外卖救星_数据备份_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click(); showToast('数据导出成功！');
+}
+
+function importData() {
+  const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.menus) { saveMenus(data.menus); saveCurrentMenuId(data.currentMenu || data.menus[0].id); }
+        if (data.history) saveHistory(data.history);
+        if (data.settings) saveSettings(data.settings);
+        renderAll(); showToast('数据导入成功！');
+      } catch(ex) { showToast('文件格式错误'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function exportHistoryCSV() {
+  const history = getHistory();
+  let csv = '日期,菜品,菜单,价格,评分\n';
+  history.forEach(h => { csv += `${new Date(h.date).toLocaleDateString('zh-CN')},${h.itemName},${h.menuName||''},${h.price},${h.rating}\n`; });
+  const blob = new Blob(['﻿' + csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '外卖历史_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); showToast('CSV导出成功！');
+}
+
+// ==================== 设置 ====================
+function openSettings() {
+  const s = getSettings();
+  $('toggleWeather').classList.toggle('on', s.weatherEnabled);
+  $('toggleReminder').classList.toggle('on', s.reminderEnabled);
+  $('settingDays').value = s.excludeRecentDays;
+  $('settingCity').value = s.weatherCity || '北京';
+  openModal('modalSettings');
+}
+
+function toggleSetting(key) {
+  const s = getSettings(); s[key] = !s[key]; saveSettings(s);
+  const id = key === 'weatherEnabled' ? 'toggleWeather' : 'toggleReminder';
+  $(id).classList.toggle('on', s[key]);
+  if (key === 'reminderEnabled') { if (s[key]) startReminder(); else stopReminder(); }
+  if (key === 'weatherEnabled' && s[key]) fetchWeather();
+  showToast(s[key] ? '已开启' : '已关闭');
+}
+
+function updateSettingDays() { const s = getSettings(); s.excludeRecentDays = parseInt($('settingDays').value); saveSettings(s); }
+function updateSettingCity() { const s = getSettings(); s.weatherCity = $('settingCity').value.trim() || '北京'; saveSettings(s); fetchWeather(); }
+
+function resetAll() {
+  if (!confirm('确定要清除所有数据吗？此操作不可撤销！')) return;
+  localStorage.clear();
+  location.hash = '';
+  location.reload();
+}
+
+// ==================== 时间提醒 ====================
+let _reminderInterval = null;
+
+function startReminder() {
+  stopReminder();
+  _reminderInterval = setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 11 && now.getMinutes() === 30 && now.getDay() >= 1 && now.getDay() <= 5) {
+      if (Notification.permission === 'granted') {
+        new Notification('🍔 外卖救星', { body:'中午了！该摇号选外卖啦~', icon:'🎲' });
+      }
+    }
+  }, 30000);
+}
+
+function stopReminder() { if (_reminderInterval) { clearInterval(_reminderInterval); _reminderInterval = null; } }
+
+function requestNotification() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+// ==================== Tab 切换 ====================
+function switchTab(tabName) {
+  $$('.tab-content').forEach(el => el.classList.remove('active'));
+  $$('.tab-btn').forEach(el => el.classList.remove('active'));
+  const content = $('tab-' + tabName); if (content) content.classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`); if (btn) btn.classList.add('active');
+  if (tabName === 'stats') renderStats();
+  if (tabName === 'random') renderRandomTab();
+  if (tabName === 'menu') renderMenuTab();
+  if (tabName === 'vote') { if (!_voteData) $('voteActiveInfo').style.display = 'block'; }
+}
+
+// ==================== UI 渲染 ====================
+function renderMenuSelector(containerId, onChange) {
+  const menus = getMenus(); const curId = getCurrentMenuId();
+  const container = $(containerId); if (!container) return;
+  container.innerHTML = menus.map(m => `
+    <span class="menu-tab ${m.id === curId ? 'active' : ''}" data-mid="${m.id}" onclick="selectMenu('${m.id}')">${m.name}</span>
+  `).join('') + `<span class="menu-tab menu-tab-add" onclick="createNewMenu()">+ 新建</span>`;
+}
+
+function selectMenu(id) {
+  saveCurrentMenuId(id);
+  renderAll();
+  showToast('已切换到「' + (getMenus().find(m=>m.id===id)?.name||'') + '」');
+}
+
+function createNewMenu() {
+  const name = prompt('新菜单名称（如：出差、周末）：');
+  if (name && name.trim()) { addMenu(name.trim()); }
+}
+
+function renderRandomTab() {
+  renderMenuSelector('randomMenuSelector');
+  const s = getSettings();
+  $('budgetChip').classList.toggle('budget-active', !!s.budget);
+  if (s.budget) $('budgetChip').textContent = '💰 ≤¥' + s.budget;
+  else $('budgetChip').textContent = '💰 预算';
+  $('excludeChip').classList.toggle('active', s.excludeRecentDays > 0);
+  if (s.excludeRecentDays > 0) $('excludeChip').textContent = '🚫 排除' + s.excludeRecentDays + '天';
+  else $('excludeChip').textContent = '🚫 排除近期';
+  if (s.budget) { $('budgetValue').value = s.budget; $('budgetInput').style.display = 'block'; }
+}
+
+function renderMenuTab() {
+  renderMenuSelector('menuTabSelector');
+  const menu = getCurrentMenu();
+  const grid = $('itemGrid');
+  const empty = $('menuEmpty');
+  if (!menu || menu.items.length === 0) {
+    grid.innerHTML = ''; empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = menu.items.map(i => `
+    <div class="item-card" onclick="editItem('${i.id}')">
+      <div class="item-name">${i.name}</div>
+      <div class="item-price">¥${i.price}</div>
+      <div class="item-meta">
+        <span class="stars">${'⭐'.repeat(i.rating||3)}</span>
+        <span>${({spicy:'🌶辣','non-spicy':'🥢不辣',sweet:'🍯甜',salty:'🧂咸',sour:'🍋酸',light:'🍃清淡'})[i.flavor]||''}</span>
+      </div>
+      <div class="item-tags">${(i.tags||[]).slice(0,3).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      ${i.lastEaten ? `<div style="font-size:11px;color:var(--text-lighter);margin-top:4px;">上次：${new Date(i.lastEaten).toLocaleDateString('zh-CN')}（第${i.eatCount||0}次）</div>` : ''}
+      <button class="btn btn-ghost btn-sm" style="position:absolute;top:4px;right:4px;padding:2px 6px;font-size:16px;" onclick="event.stopPropagation();deleteItem('${i.id}')">🗑</button>
+    </div>`).join('');
+}
+
+function openItemForm(editId) {
+  $('itemEditId').value = '';
+  $('modalItemTitle').textContent = '添加菜品';
+  $('itemForm').reset();
+  if (editId) {
+    const menu = getCurrentMenu(); const item = menu?.items.find(i => i.id === editId);
+    if (item) {
+      $('modalItemTitle').textContent = '编辑菜品';
+      $('itemEditId').value = item.id;
+      $('itemName').value = item.name;
+      $('itemPrice').value = item.price;
+      $('itemRating').value = item.rating || 3;
+      $('itemFlavor').value = item.flavor;
+      $('itemAddress').value = item.address || '';
+      $('itemTags').value = (item.tags||[]).join(', ');
+      $('itemNotes').value = item.notes || '';
+    }
+  }
+  openModal('modalItem');
+}
+
+function editItem(id) { openItemForm(id); }
+
+function saveItem(e) {
+  e.preventDefault();
+  const editId = $('itemEditId').value;
+  const item = {
+    id: editId || null,
+    name: $('itemName').value.trim(),
+    price: parseFloat($('itemPrice').value) || 0,
+    rating: parseInt($('itemRating').value) || 3,
+    flavor: $('itemFlavor').value,
+    address: $('itemAddress').value.trim(),
+    tags: $('itemTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean),
+    notes: $('itemNotes').value.trim()
+  };
+  if (!item.name || item.price <= 0) { showToast('请填写名称和价格'); return; }
+  addItem(item);
+  closeModal('modalItem');
+  renderAll();
+  showToast(editId ? '菜品已更新' : '菜品已添加');
+}
+
+function renderAll() {
+  renderRandomTab();
+  renderMenuTab();
+  const hasVote = checkVoteFromURL();
+  if (!hasVote) { $('voteNormal').style.display = 'block'; $('voteVoter').style.display = 'none'; }
+  renderStats();
+}
+
+// ==================== 事件绑定 ====================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+document.querySelectorAll('#flavorFilter .filter-chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('#flavorFilter .filter-chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// 弹窗背景点击关闭
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+});
+
+// ==================== 初始化 ====================
+function init() {
+  const settings = getSettings();
+
+  // 加载设置
+  $('settingDays').value = settings.excludeRecentDays;
+  $('settingCity').value = settings.weatherCity || '北京';
+
+  // 天气
+  if (settings.weatherEnabled) { fetchWeather(); } else { $('weatherBadge').innerHTML = '🌤 天气推荐已关闭'; }
+  // 定时刷新天气（每30分钟）
+  setInterval(() => { if (getSettings().weatherEnabled) fetchWeather(); }, 1800000);
+
+  // 提醒
+  if (settings.reminderEnabled) { startReminder(); requestNotification(); }
+
+  // 投票URL检测
+  checkVoteFromURL();
+
+  // 渲染
+  renderAll();
+  switchTab('random');
+
+  // 请求通知权限
+  requestNotification();
+}
+
+// ==================== 全局快捷函数 ====================
+// 这些函数需要挂到 window 以便 onclick 能调用（已在HTML中内联或模块作用域）
+window.toggleBudget = toggleBudget;
+window.toggleExclude = toggleExclude;
+window.updateBudget = updateBudget;
+window.openItemForm = openItemForm;
+window.editItem = editItem;
+window.deleteItem = deleteItem;
+window.saveItem = saveItem;
+window.importData = importData;
+window.exportData = exportData;
+window.exportHistoryCSV = exportHistoryCSV;
+window.openSettings = openSettings;
+window.toggleSetting = toggleSetting;
+window.updateSettingDays = updateSettingDays;
+window.updateSettingCity = updateSettingCity;
+window.resetAll = resetAll;
+window.rollTheDice = rollTheDice;
+window.confirmOrder = confirmOrder;
+window.addToVote = addToVote;
+window.startCreateVote = startCreateVote;
+window.toggleVoteItem = toggleVoteItem;
+window.generateVote = generateVote;
+window.copyVoteLink = copyVoteLink;
+window.showPasteResults = showPasteResults;
+window.castVoterVote = castVoterVote;
+window.copyVoterCode = copyVoterCode;
+window.mergeVotes = mergeVotes;
+window.selectMenu = selectMenu;
+window.createNewMenu = createNewMenu;
+window.closeModal = closeModal;
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
