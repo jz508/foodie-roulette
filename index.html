@@ -326,7 +326,7 @@ body {
 <!-- ====== 顶部栏 ====== -->
 <header class="app-header">
   <div class="logo"><span class="icon">🎲</span>外卖救星 · 崭</div>
-  <div class="weather-badge" id="weatherBadge" title="点击刷新天气">⏳ 加载中...</div>
+  <button class="weather-badge" onclick="openModal('modalReward')" style="border:none;font-size:13px;cursor:pointer;" title="打赏作者">❤️ 打赏</button>
 </header>
 
 <!-- ====== 主容器 ====== -->
@@ -379,10 +379,6 @@ body {
       </div>
     </div>
 
-    <!-- 打赏作者 -->
-    <div style="text-align:center;margin-top:20px;">
-      <button class="btn btn-ghost btn-sm" onclick="openModal('modalReward')" style="font-size:11px;color:var(--text-lighter);">❤️ 打赏作者</button>
-    </div>
   </div>
 
   <!-- ====== Tab 2: 菜单管理 ====== -->
@@ -836,9 +832,8 @@ async function fetchWeather() {
                  cur.weatherDesc[0].value.includes('晴') ? '☀️' :
                  cur.weatherDesc[0].value.includes('云') ? '⛅' : '🌤';
 
-    $('weatherBadge').innerHTML = `${icon} ${city} ${temp}°C ${desc}`;
-
-    // 计算天气加权
+    // 天气加权（后台运行，不显示在页面）
+    $('weatherBadge').innerHTML = '❤️ 打赏';
     window._weatherBoost = {};
     const descLower = desc.toLowerCase();
     if (descLower.includes('rain') || descLower.includes('drizzle') || descLower.includes('shower') || desc.includes('雨')) {
@@ -859,7 +854,7 @@ async function fetchWeather() {
     }
     if (Object.keys(window._weatherBoost).length === 0) window._weatherNote = '';
   } catch(e) {
-    $('weatherBadge').innerHTML = '🌤 天气信息暂不可用';
+    $('weatherBadge').innerHTML = '❤️ 打赏';
     window._weatherBoost = {}; window._weatherNote = '';
   }
 }
@@ -1369,7 +1364,7 @@ function init() {
   $('settingCity').value = settings.weatherCity || '北京';
 
   // 天气
-  if (settings.weatherEnabled) { fetchWeather(); } else { $('weatherBadge').innerHTML = '🌤 天气推荐已关闭'; }
+  if (settings.weatherEnabled) { fetchWeather(); }
   // 定时刷新天气（每30分钟）
   setInterval(() => { if (getSettings().weatherEnabled) fetchWeather(); }, 1800000);
 
