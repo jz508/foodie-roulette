@@ -684,7 +684,14 @@ function defaultSettings() {
 }
 
 // ==================== 数据访问 ====================
-function getMenus() { return STORAGE.get('foodie_menus', defaultMenus()); }
+function getMenus() {
+  var menus = STORAGE.get('foodie_menus', null);
+  if (!menus) {
+    menus = defaultMenus();
+    STORAGE.set('foodie_menus', menus);
+  }
+  return menus;
+}
 function saveMenus(m) { STORAGE.set('foodie_menus', m); }
 function getCurrentMenuId() { return STORAGE.get('foodie_current_menu', 'm_default'); }
 function saveCurrentMenuId(id) { STORAGE.set('foodie_current_menu', id); }
