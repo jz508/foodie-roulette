@@ -285,6 +285,15 @@ body {
 /* ====== 提示 ====== */
 .empty-state { text-align:center; padding:48px 20px; color: var(--text-lighter); }
 .empty-state .empty-icon { font-size:56px; margin-bottom:12px; }
+/* ====== 底部署名条 ====== */
+.footer-credit {
+  position:fixed; bottom:65px; left:0; right:0; z-index:99;
+  text-align:center; font-size:10px; color:var(--text-lighter);
+  padding:3px 0; pointer-events:none;
+  letter-spacing:1px;
+}
+@media (max-width:500px) { .footer-credit { bottom:60px; } }
+
 .toast {
   position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-120px);
   background: var(--text); color:#fff; padding:10px 24px; border-radius:22px;
@@ -314,7 +323,7 @@ body {
 
 <!-- ====== 顶部栏 ====== -->
 <header class="app-header">
-  <div class="logo"><span class="icon">🎲</span>外卖救星</div>
+  <div class="logo"><span class="icon">🎲</span>外卖救星 · 崭</div>
   <div class="weather-badge" id="weatherBadge" title="点击刷新天气">⏳ 加载中...</div>
 </header>
 
@@ -441,6 +450,9 @@ body {
   <button class="tab-btn" data-tab="vote"><span class="tab-icon">🗳️</span>投票</button>
   <button class="tab-btn" data-tab="stats"><span class="tab-icon">📊</span>统计</button>
 </nav>
+
+<!-- ====== 底部署名条 ====== -->
+<div class="footer-credit">© 姜崭  |  霸州外卖救星</div>
 
 <!-- ====== Toast ====== -->
 <div class="toast" id="toast"></div>
