@@ -903,11 +903,11 @@ function showResult(item) {
   // 天气推荐理由
   $('resultReason').textContent = window._weatherNote || '';
 
-  // 重新触发弹出动画（不移除show，避免display切换导致页面跳动）
-  card.classList.remove('pop');
-  void card.offsetWidth;
-  card.classList.add('pop');
-  card.classList.add('show');
+  // 首次展示用动画，后续静默更新避免页面跳动
+  if (!card.classList.contains('show')) {
+    card.classList.add('show');
+    card.classList.add('pop');
+  }
 }
 
 function confirmOrder() {
@@ -1412,6 +1412,7 @@ window.copyVoterCode = copyVoterCode;
 window.mergeVotes = mergeVotes;
 window.selectMenu = selectMenu;
 window.createNewMenu = createNewMenu;
+window.openModal = openModal;
 window.closeModal = closeModal;
 
 document.addEventListener('DOMContentLoaded', init);
