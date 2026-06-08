@@ -139,6 +139,7 @@ body {
   background: linear-gradient(135deg, #FFF9F5 0%, #FFF 100%);
   border: 2px solid var(--orange); border-radius: var(--radius);
   padding: 24px; text-align:center; margin-bottom:16px;
+  min-height: 200px;
   opacity:0; transform:scale(0.9);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
@@ -885,7 +886,8 @@ function rollTheDice() {
   const weighted = calcWeights(items);
   const chosen = weightedRandom(weighted);
   _lastRollItem = chosen;
-  showResult(chosen);
+  // 等摇号动画结束后再展示结果，避免同时动画+内容更新导致页面跳动
+  setTimeout(() => showResult(chosen), 500);
 }
 
 function showResult(item) {
